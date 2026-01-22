@@ -1,7 +1,7 @@
 // For a connection via I2C using the Arduino Wire include:
 #include <Wire.h>               
-#include "HT_SSD1306Wire.h"
-//#include "images.h"
+#include "HT_SSD1306Wire.h";
+#include "images.h"
 
 static SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 
