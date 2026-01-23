@@ -2,7 +2,7 @@
 #include "DHT.h"
 #include "HT_SSD1306Wire.h"
 #include "LoRaWan_APP.h"   // Heltec core (Vext, display)
-
+#include<SPI.h>
 #define DHTPIN 4          // SAFE GPIO
 #define DHTTYPE DHT11
 #define Vext 36
