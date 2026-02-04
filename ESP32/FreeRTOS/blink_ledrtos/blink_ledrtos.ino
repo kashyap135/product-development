@@ -27,12 +27,16 @@ Typical RTOS building blocks
 
 //RTOS Blink LED Example (FreeRTOS)
 #include <Arduino.h>//- Arduino.h → gives access to hardware functions (pinMode, digitalWrite).
-#include <FreeRTOS.h>//- FreeRTOS.h → provides RTOS APIs (xTaskCreate, vTaskDelay, vTaskStartScheduler).
-
+//#include <FreeRTOS.h>//- FreeRTOS.h → provides RTOS APIs (xTaskCreate, vTaskDelay, vTaskStartScheduler).
+int LED_BUILTIN = 13;
 // Task to blink LED
+
 void TaskBlink(void *pvParameters) { //- TaskBlink → defines what the task does
     pinMode(LED_BUILTIN, OUTPUT);   // configure LED pin as output
     while (1) { //infinite loop
+    Serial.print("TaskBlink running at: "); //prints label
+        Serial.println(xTaskGetTickCount() * portTICK_PERIOD_MS); //prints current time in ms since scheduler start.
+
         digitalWrite(LED_BUILTIN, HIGH);   // turn LED ON
         vTaskDelay(500 / portTICK_PERIOD_MS); // wait 500 ms (non-blocking) - vTaskDelay(500 / portTICK_PERIOD_MS) → sleeps for 500 ms without blocking other tasks.
         digitalWrite(LED_BUILTIN, LOW);    // turn LED OFF
@@ -42,10 +46,11 @@ void TaskBlink(void *pvParameters) { //- TaskBlink → defines what the task doe
 
 void setup() {
     // Create the LED blink task
+    Serial.begin(115200);
     xTaskCreate(
         TaskBlink,          // Task function
         "Blink",            // Task name (for debugging)
-        256,                // Stack size (words)
+        2048,                // Stack size (words)
         NULL,               // Parameters (none here)
         1,                  // Priority (1 = normal)
         NULL                // Task handle (not stored)
