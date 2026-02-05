@@ -8,7 +8,7 @@
 
 // --- USER CONFIG ---
 #define SMS_TARGET ""// Your Phone Number
-#define LORA_BAND  865E6           // Match your LoRa module (433E6, 868E6, 915E6)
+#define LORA_BAND  433E6           // Match your LoRa module (433E6, 868E6, 915E6)
 
 // --- PIN DEFINITIONS (AM036 / T-Call) ---
 #define MODEM_RST      5
