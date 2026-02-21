@@ -51,7 +51,7 @@ void setup() {
   display.init();
   display.clear();
   display.setFont(ArialMT_Plain_10);
-  display.drawString(0,0,"Repeater Fix...");
+  display.drawString(0,0," Node B Repeater Fix...");
   display.display();
 
 Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);

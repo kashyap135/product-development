@@ -253,7 +253,7 @@ Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);
   }
 
   display.clear();
-  display.drawString(0, 0, "System Ready!");
+  display.drawString(0, 0, "Node A System Ready!");
   display.display();
   delay(2000);
 }
