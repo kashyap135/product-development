@@ -12,7 +12,7 @@
 #include <LoRa.h>
 
 // --- USER CONFIG ---
-#define SMS_TARGET ""  // <--- PUT YOUR PHONE NUMBER HERE
+#define SMS_TARGET "9640951822"  // <--- PUT YOUR PHONE NUMBER HERE
 #define LORA_BAND  433E6           
 
 // --- PIN DEFINITIONS (AM036 / T-Call) ---
@@ -117,14 +117,15 @@ void loop() {
     
     // Replace short codes with readable labels and newlines
     incoming.replace("o2:", "O2: ");
-    incoming.replace(" co2:", "%\nCO2: ");
-    incoming.replace(" bt:", "ppm\nTemp: ");
-    incoming.replace(" bh:", "C\nHum: ");
-    incoming.replace(" bp:", "%\nPres: ");
-    incoming.replace(" bg:", "hPa\nGas: ");
-    incoming.replace(" h2s:", "KOhms\nH2S: ");
-    incoming.replace(" co:", "v\nCO: ");
-    incoming.replace(" ch4:", "v\nCH4: ");
+    incoming.replace(" co2:", " %\nCO2: ");
+    incoming.replace(" s_t:", " ppm\nTemp: ");
+    incoming.replace(" s_h:", " C\nHum: ");
+    incoming.replace(" b_p:", " %\nPres: ");
+    incoming.replace(" b_g:", " hPa\nGas: ");
+    incoming.replace(" b_a:", " KOhm\nAlt: ");
+    incoming.replace(" h2s:", " m\nH2S: ");
+    incoming.replace(" co:", " V\nCO: ");
+    incoming.replace(" ch4:", " V\nCH4: ");
     
     smsText += incoming + "v"; // Add last unit manually
     

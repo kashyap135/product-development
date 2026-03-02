@@ -9,10 +9,10 @@
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // SPI pins
-#define BME_CS   34
-#define BME_MOSI 35
-#define BME_MISO 37
-#define BME_SCK  36
+#define BME_CS   46
+#define BME_MOSI 45
+#define BME_MISO 40
+#define BME_SCK  39
 
 // Create BME680 object (SPI)
 Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);

@@ -57,7 +57,7 @@ void OnTxTimeout(void);
 // === IMPORTANT: WIRE BME680 TO THESE PINS ===
 #define BME_SCK  33
 #define BME_MISO 34
-#define BME_MOSI 35
+#define BME_MOSI 37
 #define BME_CS   26 
 
 /* ANALOG SETUP */
