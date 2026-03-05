@@ -6,10 +6,10 @@
 #include <LoRa.h>
 
 // --- USER CONFIG ---
-#define SMS_TARGET ""   // Your Phone Number
+#define SMS_TARGET "9640951822"   // Your Phone Number
 #define LORA_BAND  433E6          // Match your LoRa module
 #define APN        "airtelgprs.com" // Replace with your SIM APN
-#define MQTT_BROKER "broker.hivemq.com"
+#define MQTT_BROKER "test.mosquitto.org"
 #define MQTT_PORT   1883
 #define MQTT_TOPIC  "ravindra/lora/temp"
 
