@@ -31,9 +31,9 @@
 
 /* LoRa setup */
 #define RF_FREQUENCY 433E6
-#define TX_OUTPUT_POWER 17
+#define TX_OUTPUT_POWER 14
 #define LORA_BANDWIDTH 0
-#define LORA_SPREADING_FACTOR 9
+#define LORA_SPREADING_FACTOR 7
 #define LORA_CODINGRATE 1
 #define LORA_PREAMBLE_LENGTH 8
 #define LORA_SYMBOL_TIMEOUT 0
@@ -295,6 +295,7 @@ void loop() {
     Serial.print("   -> Hum: "); Serial.print(bme_hum); Serial.println(" %");
     Serial.print("   -> Pres: "); Serial.print(bme_pres); Serial.println(" hPa");
     Serial.print("   -> Gas: "); Serial.print(bme_gas); Serial.println(" KOhms");
+    Serial.print("Alt: "); Serial.print(bme_alt); Serial.println(" m");
   } else {
     Serial.println("3. BME680: SKIPPED (Not Found)");
   }
@@ -317,7 +318,7 @@ void loop() {
       sprintf(txpacket,
 "%.2f,%.0f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f",
 o2_val, scd_co2, scd_temp, scd_hum,
-bme_temp, bme_hum, bme_pres, bme_gas,
+bme_pres, bme_gas,bme_alt,
 h2s_volts, co_volts, ch4_volts);
       
       Serial.print("5. Sending LoRa Packet: ");

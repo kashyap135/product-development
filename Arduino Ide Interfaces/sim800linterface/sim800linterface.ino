@@ -2,27 +2,14 @@
 #include <Wire.h>
 #include <TinyGsmClient.h>
 #include <PubSubClient.h>
-#include <SPI.h>
-#include <LoRa.h>
-
-// ---------------- LORA CONFIG ----------------
-#define RF_FREQUENCY        433E6   // 433 MHz
-#define LORA_SS             33  // NSS (CS)
-#define LORA_RST            14      // RESET
-#define LORA_DIO0           35    // DIO0 (IRQ)
-// Buffer
-#define BUFFER_SIZE         255
-char rxpacket[BUFFER_SIZE];
-
-
 
 // USER SETTINGS
 #define SMS_TARGET "9640951822"
 #define APN "airtelgprs.com"
 
-#define MQTT_BROKER "broker.hivemq.com"
+#define MQTT_BROKER "test.mosquitto.org"
 #define MQTT_PORT 1883
-#define MQTT_TOPIC "milieu/lora/temp"
+#define MQTT_TOPIC "ravindra/sim800/test"
 
 // MODEM PINS
 #define MODEM_RST 5
@@ -72,29 +59,6 @@ void mqttConnect() {
 void setup() {
 
   SerialMon.begin(115200);
-  while (!Serial);
-
-  Serial.println("Node C - ESP32 WROVER + SX1278 Receiver (Debug Mode)");
-
-  // LoRa init
-  LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
-
-  if (!LoRa.begin(RF_FREQUENCY)) {
-    Serial.println("LoRa init failed. Check wiring!");
-    while (true);
-  }
-
-  // Match Node B parameters
-  LoRa.setSpreadingFactor(9);       // SF9
-  LoRa.setSignalBandwidth(125E3);   // BW 125 kHz
-  LoRa.setCodingRate4(5);           // CR 4/5
-
-  // Debug: dump SX1278 registers
-  Serial.println("Dumping SX1278 registers for debug:");
-  LoRa.dumpRegisters(Serial);
-
-  Serial.println("LoRa Receiver Ready");
-
 
   Wire.begin(I2C_SDA, I2C_SCL);
   setPowerBoostKeepOn(1);
@@ -136,7 +100,7 @@ void setup() {
   mqttConnect();
 
   // SEND SMS
-  if (modem.sendSMS(SMS_TARGET, "Hii this is milieu Global ")) {
+  if (modem.sendSMS(SMS_TARGET, "SIM800 MQTT Gateway Started")) {
     SerialMon.println("SMS Sent");
   } else {
     SerialMon.println("SMS Failed");
@@ -154,38 +118,20 @@ void loop() {
   }
 
   mqtt.loop();
-  int packetSize = LoRa.parsePacket();
-  if (packetSize) {
-    Serial.print("\n[DEBUG] Packet detected, size=");
-    Serial.println(packetSize);
 
-    int i = 0;
-    while (LoRa.available() && i < BUFFER_SIZE - 1) {
-      rxpacket[i++] = (char)LoRa.read();
-    }
-    rxpacket[i] = '\0';
+  static unsigned long lastTime = 0;
 
-    Serial.print("[DEBUG] Raw packet: ");
-    Serial.println(rxpacket);
-  if (strlen(rxpacket) > 0) {
-  mqtt.publish(MQTT_TOPIC, rxpacket);
-  modem.sendSMS(SMS_TARGET, rxpacket);
-} else {
-  SerialMon.println("[DEBUG] Empty packet, not publishing");
-}
+  if (millis() - lastTime > 10000) {
 
-    // Print RSSI and SNR
-    Serial.print("[DEBUG] RSSI: ");
-    Serial.println(LoRa.packetRssi());
-    Serial.print("[DEBUG] SNR: ");
-    Serial.println(LoRa.packetSnr());
-  } else {
-    // Show noise floor periodically
-    static unsigned long lastPrint = 0;
-    if (millis() - lastPrint > 2000) {
-      Serial.print("[DEBUG] Listening... RSSI=");
-      Serial.println(LoRa.packetRssi());
-      lastPrint = millis();
-    }
+    lastTime = millis();
+
+    String msg = "Hello from ESP32 SIM800";
+
+    SerialMon.println("Publishing MQTT");
+
+    mqtt.publish(MQTT_TOPIC, msg.c_str());
+
+    modem.sendSMS(SMS_TARGET, msg);
+
   }
 }

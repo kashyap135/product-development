@@ -1,126 +1,95 @@
 #include "LoRaWan_APP.h"
 #include "Arduino.h"
-#include <Wire.h>
-#include "HT_SSD1306Wire.h"
+#include "HT_SSD1306Wire.h" // Required for onboard OLED
 
-// ---------------- LORA CONFIG ----------------
-#define RF_FREQUENCY        433000000
-#define TX_OUTPUT_POWER     17
-#define LORA_BANDWIDTH      0
-#define LORA_SPREADING_FACTOR 9
-#define LORA_CODINGRATE     1
-#define LORA_PREAMBLE_LENGTH 8
-#define LORA_SYMBOL_TIMEOUT 0
-#define LORA_FIX_LENGTH_PAYLOAD_ON false
-#define LORA_IQ_INVERSION_ON false
-#define BUFFER_SIZE         255
+// ---------------- CONFIGURATION ----------------
+#define RF_FREQUENCY          433000000 
+#define TX_OUTPUT_POWER       14
+#define LORA_BANDWIDTH        0     // 125 kHz
+#define LORA_SPREADING_FACTOR 7     //
+#define LORA_CODINGRATE       1     // 4/5
+#define LORA_PREAMBLE_LENGTH  8     //
+#define LORA_SYMBOL_TIMEOUT   0
+#define LORA_IQ_INVERSION_ON  false //
 
-#define Vext 36
-
+#define BUFFER_SIZE 255             
 char rxpacket[BUFFER_SIZE];
-char txpacket[BUFFER_SIZE];
-bool lora_idle = true;
 
 static RadioEvents_t RadioEvents;
 
+// Initialize the OLED display (Onboard Heltec V3 uses 0x3c)
+extern SSD1306Wire  display; 
+
 void OnTxDone(void);
-void OnTxTimeout(void);
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
 
-extern SSD1306Wire display;
-
-void VextON() {
+void VextON(void) {
   pinMode(Vext, OUTPUT);
-  digitalWrite(Vext, LOW);
+  digitalWrite(Vext, LOW); // LOW powers ON the OLED and sensors
 }
 
 void setup() {
-
   Serial.begin(115200);
   Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);
 
-  // LoRa Setup
-  RadioEvents.TxDone = OnTxDone;
-  RadioEvents.TxTimeout = OnTxTimeout;
-  RadioEvents.RxDone = OnRxDone;
+  // 1. Power on and Initialize OLED
+  VextON();
+  delay(100);
+  display.init();
+  display.setFont(ArialMT_Plain_10);
+  display.flipScreenVertically();
+  display.clear();
+  display.drawString(0, 0, "NODE B RELAY");
+  display.drawString(0, 12, "Listening...");
+  display.display();
 
+  // 2. Initialize Radio Callbacks
+  RadioEvents.TxDone = OnTxDone;
+  RadioEvents.RxDone = OnRxDone;
+  
   Radio.Init(&RadioEvents);
   Radio.SetChannel(RF_FREQUENCY);
 
   Radio.SetTxConfig(MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
                     LORA_SPREADING_FACTOR, LORA_CODINGRATE,
-                    LORA_PREAMBLE_LENGTH, LORA_FIX_LENGTH_PAYLOAD_ON,
-                    true, 0, 0, LORA_IQ_INVERSION_ON, 3000);
+                    LORA_PREAMBLE_LENGTH, false, true, 0, 0, 
+                    LORA_IQ_INVERSION_ON, 3000);
 
-  Radio.Rx(0);
+  Radio.SetRxConfig(MODEM_LORA, LORA_BANDWIDTH, LORA_SPREADING_FACTOR,
+                    LORA_CODINGRATE, 0, LORA_PREAMBLE_LENGTH,
+                    LORA_SYMBOL_TIMEOUT, false, 0, true, 0, 0, 
+                    LORA_IQ_INVERSION_ON, true);
 
-  // OLED
-  VextON();
-  delay(300);
-  display.init();
-  display.setFont(ArialMT_Plain_10);
-
-  display.clear();
-  display.drawString(0,0,"Node B Ready");
-  display.drawString(0,15,"LoRa Relay");
-  display.display();
+  Radio.Rx(0); 
+  Serial.println("Node B Relay Listening...");
 }
 
 void loop() {
-  Radio.IrqProcess();
+  Radio.IrqProcess(); 
 }
 
-// ---------------- RECEIVE DATA ----------------
-
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
-
   memcpy(rxpacket, payload, size);
   rxpacket[size] = '\0';
 
-  Serial.printf("\nNode B Received: %s\n", rxpacket);
-
+  // Update OLED with Received Data
   display.clear();
-  display.drawString(0,0,"Node B RX");
-  display.drawString(0,20,rxpacket);
+  display.drawString(0, 0, "RECEIVED FROM A:");
+  display.drawString(0, 12, String(rxpacket));
+  display.drawString(0, 52, "RSSI: " + String(rssi));
   display.display();
 
-  // Forward same packet
-  strcpy(txpacket, rxpacket);
+  Serial.printf("\nReceived from Node A: %s (RSSI: %d)\n", rxpacket, rssi);
 
-  Serial.printf("Forwarding to Node c: %s\n", txpacket);
-
-  display.drawString(0,40,"Forwarding...");
-  display.display();
-
-  Radio.Send((uint8_t *)txpacket, strlen(txpacket));
-  lora_idle = false;
+  delay(500); // Small delay to avoid collision
+  Radio.Send((uint8_t *)rxpacket, strlen(rxpacket));
 }
-
-// ---------------- TX DONE ----------------
 
 void OnTxDone(void) {
-
-  Serial.println("Node B forwarded successfully!");
-
-  display.clear();
-  display.drawString(0,0,"Forwarded OK");
+  // Update OLED with Forwarding Status
+  display.drawString(0, 32, "FORWARDED TO C");
   display.display();
-
-  lora_idle = true;
-  Radio.Rx(0);
-}
-
-// ---------------- TX TIMEOUT ----------------
-
-void OnTxTimeout(void) {
-
-  Serial.println("Node B TX Timeout!");
-
-  display.clear();
-  display.drawString(0,0,"TX Timeout");
-  display.display();
-
-  Radio.Sleep();
-  lora_idle = true;
-  Radio.Rx(0);
+  
+  Serial.println("Forwarded Successfully.");
+  Radio.Rx(0); // Return to RX mode
 }
