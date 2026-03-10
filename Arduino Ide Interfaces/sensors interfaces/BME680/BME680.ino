@@ -30,7 +30,19 @@ void VextOFF() {
 
 // ---- Use Heltec's OLED object ----
 extern SSD1306Wire display;
+void reset()
+{
+Serial.println("Type 'R' to reset the board");
+ if (Serial.available()) {
+    char cmd = Serial.read();
+    if (cmd == 'R' || cmd == 'r') {
+      Serial.println("Resetting board...");
+      delay(100);
+      ESP.restart();   // ESP32 software reset
+    }
+  }
 
+}
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -82,6 +94,7 @@ void loop() {
   Serial.print("Pres: "); Serial.print(pres); Serial.println(" hPa");
   Serial.print("Gas: "); Serial.print(gas); Serial.println(" KOhms");
   Serial.print("Alt: "); Serial.print(alt); Serial.println(" m");
+  reset();
 
   // OLED output
   display.clear();
