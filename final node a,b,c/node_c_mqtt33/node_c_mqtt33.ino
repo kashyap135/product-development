@@ -60,7 +60,7 @@ void mqttConnect() {
 
   while (!mqtt.connected()) {
 
-    if (mqtt.connect("ESP32_SIM800", MQTT_USER, MQTT_PASS)) {
+    if (mqtt.connect("NODE_LOCAL_CLIENT", MQTT_USER, MQTT_PASS)) {
       SerialMon.println(" -> Connected");
     }
 
@@ -143,7 +143,7 @@ void publishJSON(const char* topic, float value, const char* unit){
 
   doc["value"] = value;
   doc["unit"] = unit;
-  doc["sensor_id"] = "NODE_A";
+  doc["sensor_id"] = "NODE_";
   doc["timestamp"] = millis();
 
   char payload[256];
@@ -193,8 +193,8 @@ void loop() {
     publishJSON("zone/zone_1/gas/humidity", hum, "%");
     publishJSON("zone/zone_1/gas/pressure", pressure, "hPa");
     publishJSON("zone/zone_1/gas/carbondioxide", co2, "ppm");
-    publishJSON("zone/zone_1/gas/gas", airquality, "ppm");
-     publishJSON("zone/zone_1/gas/altitude", alt, "ppm");
+    publishJSON("zone/zone_1/gas/airquality", airquality, "ppm");
+    publishJSON("zone/zone_1/gas/altitude", alt, "ppm");
     
 
     Serial.println("MQTT JSON Published");
