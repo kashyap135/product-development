@@ -24,14 +24,14 @@
 #define MUX_ADDR 0x70
 
 /* MUX CHANNELS DEFINITION */
-#define MUX_CH_O2  0
+#define MUX_CH_O2  4
 #define MUX_CH_SCD 1
-#define MUX_CH_ADS 3 
+#define MUX_CH_ADS 2 
 // Note: BME is NOT on Mux anymore, it is on SPI pins
 
 /* LoRa setup */
 #define RF_FREQUENCY 433E6
-#define TX_OUTPUT_POWER 5
+#define TX_OUTPUT_POWER 14
 #define LORA_BANDWIDTH 0
 #define LORA_SPREADING_FACTOR 7
 #define LORA_CODINGRATE 1
@@ -55,14 +55,10 @@ void OnTxTimeout(void);
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // === IMPORTANT: WIRE BME680 TO THESE PINS ===
-#define BME_SCK  33
-#define BME_MISO 34
-#define BME_MOSI 37
-#define BME_CS   26 
-
-/* ANALOG SETUP */
-#define CO_PIN 7
-#define IR13BD_PIN 6
+#define BME_SCK  39
+#define BME_MISO 40
+#define BME_MOSI 45
+#define BME_CS   46 
 
 extern SSD1306Wire display;
 
@@ -154,13 +150,15 @@ float readH2S() {
 }
 
 float readCarbonMonoxide(){
-  int rawvalue = analogRead(CO_PIN);
+  muxselect(MUX_CH_ADS); 
+  int rawvalue = ads.readADC_SingleEnded(1);
   float voltage = (rawvalue / 4095.0) * 3.3;
   return voltage; 
 }
 
 float readMethane() {
-  int irRaw = analogRead(IR13BD_PIN);
+  muxselect(MUX_CH_ADS); 
+  int irRaw = ads.readADC_SingleEnded(2);
   float irVoltage = (irRaw / 4095.0) * 3.3; 
   return irVoltage;
 }
@@ -169,6 +167,11 @@ float readMethane() {
 void OnTxDone(void) {
   Serial.println("   [LoRa] TX Finished");
   lora_idle = true;
+  Serial.println("Node A TX Done, going to sleep...");
+  // Sleep for 10 seconds
+  esp_sleep_enable_timer_wakeup(10 * 1000000ULL);
+  esp_deep_sleep_start();
+
 }
 
 void OnTxTimeout(void) {
@@ -195,6 +198,9 @@ void setup() {
 Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);
   
   // Initialize LoRa
+    // Set LoRa Frequency (India usually uses 865-867 MHz)
+
+  // LoRa parameters
   RadioEvents.TxDone = OnTxDone;
   RadioEvents.TxTimeout = OnTxTimeout;
   Radio.Init(&RadioEvents);
@@ -253,7 +259,7 @@ Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);
   }
 
   display.clear();
-  display.drawString(0, 0, "Node A System Ready!");
+  display.drawString(0, 0, "System Ready!");
   display.display();
   delay(2000);
 }
@@ -289,6 +295,7 @@ void loop() {
     Serial.print("   -> Hum: "); Serial.print(bme_hum); Serial.println(" %");
     Serial.print("   -> Pres: "); Serial.print(bme_pres); Serial.println(" hPa");
     Serial.print("   -> Gas: "); Serial.print(bme_gas); Serial.println(" KOhms");
+    Serial.print("Alt: "); Serial.print(bme_alt); Serial.println(" m");
   } else {
     Serial.println("3. BME680: SKIPPED (Not Found)");
   }
@@ -308,10 +315,11 @@ void loop() {
   if (lora_idle == true) {
     if(!isnan(o2_val) && !isnan(scd_co2)) {
       
-      sprintf(txpacket, 
-        "o2:%.2f co2:%.0f s_t:%.1f s_h:%.1f b_t:%.1f b_h:%.1f b_p:%.1f b_g:%.2f h2s:%.2f co:%.2f ch4:%.2f", 
-        o2_val, scd_co2, scd_temp, scd_hum, bme_temp, bme_hum, bme_pres, bme_gas, h2s_volts, co_volts, ch4_volts
-      );
+      sprintf(txpacket,
+"%.2f,%.0f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f",
+o2_val, scd_co2, scd_temp, scd_hum,
+bme_pres, bme_gas,bme_alt,
+h2s_volts, co_volts, ch4_volts);
       
       Serial.print("5. Sending LoRa Packet: ");
       Serial.println(txpacket);
@@ -354,23 +362,4 @@ void loop() {
   display.drawString(0, 30, "CO: " + String(co_volts) + " V");
   display.display();
   delay(3000);
-  
-
-
-  // 1. Turn off the LoRa Radio
-Radio.Sleep();
-
-// 2. Turn off the OLED Screen
-display.displayOff();
-
-// 3. Turn off power to external sensors (Vext)
-VextOFF(); 
-
-// 4. Configure the wake-up timer (2 minutes in microseconds)
-// 2 * 60 * 1,000,000 = 120,000,000
-esp_sleep_enable_timer_wakeup(120 * 1000000ULL);
-
-// 5. Go to sleep (The system basically shuts down here)
-Serial.println("Going to sleep for 2 mins...");
-esp_deep_sleep_start();
 }

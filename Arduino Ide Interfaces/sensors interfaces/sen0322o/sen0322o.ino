@@ -9,7 +9,10 @@
 
 #define SENSOR_SDA 41
 #define SENSOR_SCL 42
-#define Vext       36
+
+#define Vext 36
+
+#define TCA_ADDR 0x70           // I2C Multiplexer Address
 #define Oxygen_IICAddress ADDRESS_3
 
 // 1. OLED Object (Uses default Wire on 17/18)
@@ -18,7 +21,15 @@ extern SSD1306Wire display;
 // 2. Oxygen Sensor Object
 // We pass &Wire1 HERE, in the constructor!
 DFRobot_OxygenSensor oxygen(&Wire1); 
+// -------- MUX Channel Select Function --------
+void selectMuxChannel(uint8_t channel)
+{
+  if (channel > 7) return;
 
+  Wire1.beginTransmission(TCA_ADDR);
+  Wire1.write(1 << channel);
+  Wire1.endTransmission();
+}
 void VextON() {
   pinMode(Vext, OUTPUT);
   digitalWrite(Vext, LOW);
