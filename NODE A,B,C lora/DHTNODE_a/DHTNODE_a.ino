@@ -1,12 +1,12 @@
 #include <SPI.h>
 #include <LoRa.h>
 
-#define LORA_SCK   5
+#define LORA_SCK   18
 #define LORA_MISO  19
-#define LORA_MOSI  27
-#define LORA_CS    18
+#define LORA_MOSI  23
+#define LORA_CS    5
 #define LORA_RST   14
-#define LORA_IRQ   26
+#define LORA_IRQ   2
 
 #define LORA_BAND  433E6
 

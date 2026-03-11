@@ -6,10 +6,10 @@
 // --- LoRa Pins (SX1278) ---
 #define SCK     18
 #define MISO    19
-#define MOSI    23
-#define SS      5
+#define MOSI    25
+#define SS      1
 #define RST     14
-#define DIO0    2
+#define DIO0    34
 #define BAND    433E6
 
 // --- SIM800L Pins ---

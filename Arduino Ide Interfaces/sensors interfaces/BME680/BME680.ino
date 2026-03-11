@@ -9,10 +9,10 @@
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // SPI pins
-#define BME_CS   34
-#define BME_MOSI 35
-#define BME_MISO 37
-#define BME_SCK  36
+#define BME_CS   46
+#define BME_MOSI 45
+#define BME_MISO 40
+#define BME_SCK  39
 
 // Create BME680 object (SPI)
 Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
@@ -30,7 +30,19 @@ void VextOFF() {
 
 // ---- Use Heltec's OLED object ----
 extern SSD1306Wire display;
+void reset()
+{
+Serial.println("Type 'R' to reset the board");
+ if (Serial.available()) {
+    char cmd = Serial.read();
+    if (cmd == 'R' || cmd == 'r') {
+      Serial.println("Resetting board...");
+      delay(100);
+      ESP.restart();   // ESP32 software reset
+    }
+  }
 
+}
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -82,6 +94,7 @@ void loop() {
   Serial.print("Pres: "); Serial.print(pres); Serial.println(" hPa");
   Serial.print("Gas: "); Serial.print(gas); Serial.println(" KOhms");
   Serial.print("Alt: "); Serial.print(alt); Serial.println(" m");
+  reset();
 
   // OLED output
   display.clear();
