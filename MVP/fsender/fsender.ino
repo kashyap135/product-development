@@ -24,14 +24,14 @@
 #define MUX_ADDR 0x70
 
 /* MUX CHANNELS DEFINITION */
-#define MUX_CH_O2  0
+#define MUX_CH_O2  4
 #define MUX_CH_SCD 1
-#define MUX_CH_ADS 3 
+#define MUX_CH_ADS 2 
 // Note: BME is NOT on Mux anymore, it is on SPI pins
 
 /* LoRa setup */
 #define RF_FREQUENCY 433E6
-#define TX_OUTPUT_POWER 5
+#define TX_OUTPUT_POWER 14
 #define LORA_BANDWIDTH 0
 #define LORA_SPREADING_FACTOR 7
 #define LORA_CODINGRATE 1
@@ -55,14 +55,13 @@ void OnTxTimeout(void);
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // === IMPORTANT: WIRE BME680 TO THESE PINS ===
-#define BME_SCK  33
-#define BME_MISO 34
-#define BME_MOSI 37
-#define BME_CS   26 
+#define BME_CS   46
+#define BME_MOSI 45
+#define BME_MISO 40
+#define BME_SCK  39
 
 /* ANALOG SETUP */
-#define CO_PIN 7
-#define IR13BD_PIN 6
+
 
 extern SSD1306Wire display;
 
@@ -147,24 +146,41 @@ void readBme680(float &temp, float &hum, float &pres, float &gas, float &alti) {
 }
 
 float readH2S() {
-  muxselect(MUX_CH_ADS); 
-  int16_t adc0 = ads.readADC_SingleEnded(0);
-  float voltage = adc0 * 0.125 / 1000.0; 
-  return voltage;
+  muxselect(MUX_CH_ADS);
+  float offset = 0.335;      // Updated H2S Baseline
+  float sensitivity = 0.020;
+  int16_t adc = ads.readADC_SingleEnded(0);
+  float voltage = adc * 0.125 / 1000.0;
+
+  float ppm = (voltage - offset) / sensitivity;
+  if(ppm < 0) ppm = 0;
+  return ppm; 
 }
 
-float readCarbonMonoxide(){
-  int rawvalue = analogRead(CO_PIN);
-  float voltage = (rawvalue / 4095.0) * 3.3;
-  return voltage; 
+float readCarbonMonoxide() {
+  muxselect(MUX_CH_ADS);
+  // If CO drops more, update this 1.061 to the final stable number!
+  float offset = 1.061;      
+  float sensitivity = 0.055;
+  int16_t adc = ads.readADC_SingleEnded(1);
+  float voltage = adc * 0.125 / 1000.0;
+
+  float ppm = (voltage - offset) / sensitivity;
+  if(ppm < 0) ppm = 0;
+  return ppm;
 }
 
 float readMethane() {
-  int irRaw = analogRead(IR13BD_PIN);
-  float irVoltage = (irRaw / 4095.0) * 3.3; 
-  return irVoltage;
+  muxselect(MUX_CH_ADS);
+  float offset = 1.436;      // Updated CH4 Baseline
+  float sensitivity = 0.10;
+  int16_t adc = ads.readADC_SingleEnded(2);
+  float voltage = adc * 0.125 / 1000.0;
+  
+  float ppm = (voltage - offset) / sensitivity;
+  if(ppm < 0) ppm = 0;
+  return ppm;
 }
-
 /* LoRa Callbacks */
 void OnTxDone(void) {
   Serial.println("   [LoRa] TX Finished");
@@ -253,7 +269,7 @@ Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);
   }
 
   display.clear();
-  display.drawString(0, 0, "Node A System Ready!");
+  display.drawString(0, 0, "System Ready!");
   display.display();
   delay(2000);
 }

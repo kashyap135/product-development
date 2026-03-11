@@ -99,8 +99,12 @@ void muxselect(uint8_t ch) {
 float getOxygenData() {
   muxselect(MUX_CH_O2);
   delay(10); 
-  float data = oxygen.getOxygenData(20); 
-  return data;
+  float raw_data = oxygen.getOxygenData(10); 
+  
+  
+  float calibrated_data = raw_data * 0.8063; 
+  
+  return calibrated_data;
 }
 
 void readScd41(float &co2, float &temp, float &hum) {
@@ -143,24 +147,43 @@ void readBme680(float &temp, float &hum, float &pres, float &gas, float &alti) {
 }
 
 float readH2S() {
-  muxselect(MUX_CH_ADS); 
-  int16_t adc0 = ads.readADC_SingleEnded(0);
-  float voltage = adc0 * 0.125 / 1000.0; 
-  return voltage;
+  muxselect(MUX_CH_ADS);
+  float offset = 0.335;      // Updated H2S Baseline
+  float sensitivity = 0.020;
+  float correctionvalue=1; //change after testing (given/ppm)
+  int16_t adc = ads.readADC_SingleEnded(0);
+  float voltage = adc * 0.125 / 1000.0;
+
+  float ppm = (voltage - offset) / sensitivity;
+  if(ppm < 0) ppm = 0;
+  return ppm * correctionvalue; 
 }
 
-float readCarbonMonoxide(){
-  muxselect(MUX_CH_ADS); 
-  int rawvalue = ads.readADC_SingleEnded(1);
-  float voltage = (rawvalue / 4095.0) * 3.3;
-  return voltage; 
+float readCarbonMonoxide() {
+  muxselect(MUX_CH_ADS);
+  // If CO drops more, update this 1.061 to the final stable number!
+  float offset = 1.061;      
+  float sensitivity = 0.055;
+  float correctionvalue=1; //change after testing (given/ppm)
+  int16_t adc = ads.readADC_SingleEnded(1);
+  float voltage = adc * 0.125 / 1000.0;
+
+  float ppm = (voltage - offset) / sensitivity;
+  if(ppm < 0) ppm = 0;
+  return ppm * correctionvalue; 
 }
 
 float readMethane() {
-  muxselect(MUX_CH_ADS); 
-  int irRaw = ads.readADC_SingleEnded(2);
-  float irVoltage = (irRaw / 4095.0) * 3.3; 
-  return irVoltage;
+  muxselect(MUX_CH_ADS);
+  float offset = 1.436;      // Updated CH4 Baseline
+  float sensitivity = 0.10;
+  float correctionvalue=1; //change after testing (given/ppm)
+  int16_t adc = ads.readADC_SingleEnded(2);
+  float voltage = adc * 0.125 / 1000.0;
+  
+  float ppm = (voltage - offset) / sensitivity;
+  if(ppm < 0) ppm = 0;
+  return ppm * correctionvalue; 
 }
 
 /* LoRa Callbacks */
@@ -303,22 +326,23 @@ void loop() {
   // -- Analog --
   Serial.println("4. Analog Sensors:");
   float h2s_volts = readH2S();
-  Serial.print("   -> H2S: "); Serial.print(h2s_volts); Serial.println(" V");
+  Serial.print("   -> H2S: "); Serial.print(h2s_volts); Serial.println(" ppm");
   
   float co_volts = readCarbonMonoxide();
-  Serial.print("   -> CO: "); Serial.print(co_volts); Serial.println(" V");
+  Serial.print("   -> CO: "); Serial.print(co_volts); Serial.println(" ppm");
   
   float ch4_volts = readMethane();
-  Serial.print("   -> CH4: "); Serial.print(ch4_volts); Serial.println(" V");
+  Serial.print("   -> CH4: "); Serial.print(ch4_volts); Serial.println(" ppm");
 
   // 2. LoRa Sender
   if (lora_idle == true) {
     if(!isnan(o2_val) && !isnan(scd_co2)) {
       
+      // 12 format specifiers for 12 variables
       sprintf(txpacket,
-"%.2f,%.0f,%.1f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f",
+"%.2f,%.0f,%.1f,%.1f,%.2f,%.2f,%.1f,%.1f,%.2f,%.2f,%.2f,%.2f",
 o2_val, scd_co2, scd_temp, scd_hum,
-bme_pres, bme_gas,bme_alt,
+bme_temp, bme_hum, bme_pres, bme_gas, bme_alt,
 h2s_volts, co_volts, ch4_volts);
       
       Serial.print("5. Sending LoRa Packet: ");

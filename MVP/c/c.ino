@@ -25,7 +25,7 @@ const char* mqtt_server   = "broker.hivemq.com";
 const char* mqtt_topic    = "sensors/node_a/data";
 
 // --- SMS Config ---
-const char* phone_number  = "+919640951822"; // Your mobile number
+const char* phone_number  = "+918247567314"; // Your mobile number
 
 WiFiClient espClient;
 PubSubClient client(espClient);
