@@ -57,8 +57,8 @@ void OnTxTimeout(void);
 // === IMPORTANT: WIRE BME680 TO THESE PINS ===
 #define BME_SCK  39
 #define BME_MISO 40
-#define BME_MOSI 45
-#define BME_CS   46 
+#define BME_MOSI 47
+#define BME_CS   38 
 
 extern SSD1306Wire display;
 
@@ -141,6 +141,7 @@ void readBme680(float &temp, float &hum, float &pres, float &gas, float &alti) {
 
   temp = bme.temperature;
   hum = bme.humidity;
+
   pres = bme.pressure / 100.0;
   gas = bme.gas_resistance / 1000.0;
   alti = bme.readAltitude(SEALEVELPRESSURE_HPA);
@@ -148,7 +149,7 @@ void readBme680(float &temp, float &hum, float &pres, float &gas, float &alti) {
 
 float readH2S() {
   muxselect(MUX_CH_ADS);
-  float offset = 0.335;      // Updated H2S Baseline
+  float offset = 0.489;      // Updated H2S Baseline
   float sensitivity = 0.020;
   float correctionvalue=1; //change after testing (given/ppm)
   int16_t adc = ads.readADC_SingleEnded(0);
@@ -162,7 +163,7 @@ float readH2S() {
 float readCarbonMonoxide() {
   muxselect(MUX_CH_ADS);
   // If CO drops more, update this 1.061 to the final stable number!
-  float offset = 1.061;      
+  float offset = 1.140;      
   float sensitivity = 0.055;
   float correctionvalue=1; //change after testing (given/ppm)
   int16_t adc = ads.readADC_SingleEnded(1);
@@ -175,7 +176,7 @@ float readCarbonMonoxide() {
 
 float readMethane() {
   muxselect(MUX_CH_ADS);
-  float offset = 1.436;      // Updated CH4 Baseline
+  float offset = 1.159;      // Updated CH4 Baseline
   float sensitivity = 0.10;
   float correctionvalue=1; //change after testing (given/ppm)
   int16_t adc = ads.readADC_SingleEnded(2);
@@ -192,7 +193,7 @@ void OnTxDone(void) {
   lora_idle = true;
   Serial.println("Node A TX Done, going to sleep...");
   // Sleep for 10 seconds
-  esp_sleep_enable_timer_wakeup(10 * 1000000ULL);
+  esp_sleep_enable_timer_wakeup(120 * 1000000ULL);
   esp_deep_sleep_start();
 
 }

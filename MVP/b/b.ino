@@ -91,6 +91,7 @@ void loop() {
     packetReceived = false;
     
     Serial.println("\n[RX] Msg Received!");
+   
     
     display.clear();
     display.drawString(0, 0, "RX OK | RSSI: " + String(last_rssi));
@@ -138,6 +139,9 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
   rxpacket[size] = '\0'; 
   last_rssi = rssi;
   packetReceived = true;
+   Serial.print("Sync word check - first byte: 0x");
+Serial.println(payload[0], HEX);
+    Serial.println(rxpacket);
 }
 
 void OnTxDone(void) {

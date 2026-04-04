@@ -17,7 +17,7 @@
 #define BAND 433E6
 
 // -------- USER SETTINGS --------
-#define SMS_TARGET "9640951822"
+#define SMS_TARGET "8247567314"
 #define APN "airtelgprs.com"
 
 #define MQTT_BROKER "o7417887.ala.asia-southeast1.emqxsl.com"
